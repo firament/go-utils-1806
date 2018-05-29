@@ -30,8 +30,10 @@ func uploadCSV(w http.ResponseWriter, r *http.Request) {
 	switch lsMethod := r.Method; lsMethod {
 	case "POST":
 		uploadCSV(w, r)
-	default:
+	case "GET":
 		uploadCSVGet(w, r)
+	default:
+		http.Error(w, fmt.Sprintf("Request Method not allowed. Check documentation for valid methods!"), http.StatusMethodNotAllowed)
 	}
 }
 
