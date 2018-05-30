@@ -10,3 +10,4 @@ This folder contains web resources and assets.
 | css    | all style sheets used in the package                          |
 | imgs   | all images used in the package                                |
 | js     | all scripts (jsavascript, ts cripts, ...) used in the package |
+| pages  | html content pages, and fragments, orgenized in folders       |
