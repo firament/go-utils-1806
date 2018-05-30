@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/csv"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"log"
 	"mime/multipart"
@@ -16,10 +15,11 @@ const CFAIL string = "FAIL"
 
 // csvStatus will be used only in this file, for now.
 type csvStatus struct {
-	Status string // PASS, FAIL or any other
-	Row    int
-	Col    int
-	Error  error
+	Status  string // PASS, FAIL or any other
+	Row     int
+	Col     int
+	ErrData string
+	// Error   error
 }
 
 // bulkUploadStatus will be used only in this file, for now.
@@ -197,7 +197,7 @@ func addAPIFromCsv(psAPIData []string) (rStatus csvStatus) {
 	// pStatus.Col = 99, set status of error column
 
 	// build and Add x-info object to JSON
-	log.Println("x-Company", psAPIData[1])
+	log.Println("Company", psAPIData[1])
 	/*
 		log.Println("x-App-Name", psAPIData[2])
 		log.Println("x-App-URL", psAPIData[3])
@@ -207,7 +207,8 @@ func addAPIFromCsv(psAPIData []string) (rStatus csvStatus) {
 		log.Println("x-Company-Github", psAPIData[7])
 		log.Println("x-additionalHostNames", psAPIData[8])
 	*/
-	rStatus.Error = errors.New(fmt.Sprintf("x-Company = %s", psAPIData[1]))
+	// rStatus.Error = errors.New(fmt.Sprintf("Company = %s", psAPIData[1]))
+	rStatus.ErrData = fmt.Sprintf("x-Company = %s", psAPIData[1])
 
 	// Use transaction - begin
 
@@ -222,6 +223,7 @@ func addAPIFromCsv(psAPIData []string) (rStatus csvStatus) {
 
 	// Set all-is-well flags
 	rStatus.Status = CPass
+	log.Println(getAsJson(rStatus))
 	return
 }
 
@@ -240,4 +242,17 @@ func getStatusAsStr(pStatus bulkUploadStatus, pbLogToDBAlso bool, pSender string
 		//utilities.WriteLogEntryDB(pSender, rStatusText)
 	}
 	return
+}
+
+// getAsJson is a debug function to inspect objects
+func getAsJson(pIFC interface{}) string {
+	var labJSON []byte
+	var lsText string
+	// var lErr error
+
+	labJSON, _ = json.MarshalIndent(pIFC, "", "    ")
+
+	lsText = bytes.NewBuffer(labJSON).String()
+	log.Println(lsText)
+	return lsText
 }
