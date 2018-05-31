@@ -8,10 +8,11 @@ import (
 	"log"
 	"mime/multipart"
 	"net/http"
+	"utils1806"
 )
 
 const CPass string = "PASS"
-const CFAIL string = "FAIL"
+const CFail string = "FAIL"
 
 // csvStatus will be used only in this file, for now.
 type csvStatus struct {
@@ -49,6 +50,16 @@ func handler(w http.ResponseWriter, r *http.Request) {
 	switch lsURL := r.URL.Path; lsURL {
 	case "/uploadCSV":
 		uploadCSV(w, r)
+	case "/favicon.ico":
+		fmt.Fprintf(w, "TODO Add favicon to assets")
+		// Write results back to caller
+		// w.Header().Add("Content-Type", "application/json")
+		// w.Header().Add("Content-Disposition", "inline")
+		w.Write(utils1806.GetFavIcon())
+		w.WriteHeader(http.StatusOK)
+
+	case "/getBase64":
+		utils1806.GetBase64(w, r)
 	default:
 		fmt.Fprintf(w, "DEBUG Got '%s' as URL to process", r.URL)
 	}
@@ -112,6 +123,7 @@ func uploadCSV(w http.ResponseWriter, r *http.Request) {
 		// Write results back to caller
 		w.Header().Add("Content-Type", "application/json")
 		w.Header().Add("Content-Disposition", "inline")
+		// w.Header().Add("Status-Code", strconv.Itoa(http.StatusMethodNotAllowed))
 		w.Write([]byte(vsResult))
 		w.WriteHeader(http.StatusOK)
 
@@ -197,7 +209,7 @@ func addAPIFromCsv(psAPIData []string) (rStatus csvStatus) {
 	// pStatus.Col = 99, set status of error column
 
 	// build and Add x-info object to JSON
-	log.Println("Company", psAPIData[1])
+	log.Println("x-App-Description", psAPIData[4])
 	/*
 		log.Println("x-App-Name", psAPIData[2])
 		log.Println("x-App-URL", psAPIData[3])
@@ -208,7 +220,7 @@ func addAPIFromCsv(psAPIData []string) (rStatus csvStatus) {
 		log.Println("x-additionalHostNames", psAPIData[8])
 	*/
 	// rStatus.Error = errors.New(fmt.Sprintf("Company = %s", psAPIData[1]))
-	rStatus.ErrData = fmt.Sprintf("x-Company = %s", psAPIData[1])
+	rStatus.ErrData = fmt.Sprintf("x-App-Description = %s", psAPIData[4])
 
 	// Use transaction - begin
 
@@ -223,7 +235,7 @@ func addAPIFromCsv(psAPIData []string) (rStatus csvStatus) {
 
 	// Set all-is-well flags
 	rStatus.Status = CPass
-	log.Println(getAsJson(rStatus))
+	// log.Println(getAsJson(rStatus))
 	return
 }
 
