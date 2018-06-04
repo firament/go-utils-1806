@@ -68,6 +68,55 @@ func handler(w http.ResponseWriter, r *http.Request) {
 
 // bootstrap code, for testing - END
 
+// UploadCSVPostH is the public handler for web server router
+func UploadCSVPost(w http.ResponseWriter, r *http.Request) {
+	// extract uploaded file
+	var lErr error
+	var lsErrStr string
+	var lfpostedFile multipart.File
+	var lfPostFileHeader *multipart.FileHeader
+	var lStatus bulkUploadStatus
+	var lRowStatus csvStatus
+
+	lErr = r.ParseMultipartForm(5242880)
+	if lErr != nil {
+		lsErrStr = fmt.Sprintf("FAIL Parsing Form, with error %+v\n", lErr)
+		lRowStatus.Row = -1
+		lRowStatus.Status = lsErrStr
+		lStatus.RowStatus = append(lStatus.RowStatus, lRowStatus)
+		lsErrStr = getStatusAsStr(lStatus, true, "uploadCSV")
+		http.Error(w, lsErrStr, http.StatusExpectationFailed)
+		return
+	}
+
+	lfpostedFile, lfPostFileHeader, lErr = r.FormFile("ApiDataFileCsv")
+	if lErr != nil {
+		lsErrStr = fmt.Sprintf("FAIL Opening file, with error %+v\n", lErr)
+		lRowStatus.Row = -1
+		lRowStatus.Status = lsErrStr
+		lStatus.RowStatus = append(lStatus.RowStatus, lRowStatus)
+		lsErrStr = getStatusAsStr(lStatus, true, "uploadCSV")
+		http.Error(w, lsErrStr, http.StatusExpectationFailed)
+		return
+	}
+	log.Printf("Processing File %s containing %d bytes.\n", lfPostFileHeader.Filename, lfPostFileHeader.Size)
+	lStatus.File = lfPostFileHeader.Filename
+	lStatus.Size = lfPostFileHeader.Size
+
+	var csvReader *csv.Reader
+	csvReader = csv.NewReader(lfpostedFile)
+	csvReader.ReuseRecord = false
+
+	vsResult := UploadCSV(csvReader, lStatus)
+
+	// Write results back to caller
+	w.Header().Add("Content-Type", "application/json")
+	w.Header().Add("Content-Disposition", "inline")
+	w.Write([]byte(vsResult))
+	w.WriteHeader(http.StatusOK)
+
+}
+
 func uploadCSV(w http.ResponseWriter, r *http.Request) {
 	if r.URL.Path != "/uploadCSV" {
 		http.Error(w, fmt.Sprintf("Unknown Endpoint '%s', Check documentation!", r.URL), http.StatusInternalServerError)
@@ -79,7 +128,7 @@ func uploadCSV(w http.ResponseWriter, r *http.Request) {
 
 	switch lsMethod := r.Method; lsMethod {
 	case "GET":
-		uploadCSVGet(w, r)
+		UploadCSVGet(w, r)
 	case "POST":
 		// Get uploaded file
 		var lErr error
@@ -118,7 +167,7 @@ func uploadCSV(w http.ResponseWriter, r *http.Request) {
 		csvReader = csv.NewReader(lfpostedFile)
 		csvReader.ReuseRecord = false
 
-		vsResult := uploadCSVPost(csvReader, lStatus)
+		vsResult := UploadCSV(csvReader, lStatus)
 
 		// Write results back to caller
 		w.Header().Add("Content-Type", "application/json")
@@ -132,12 +181,17 @@ func uploadCSV(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func uploadCSVGet(w http.ResponseWriter, r *http.Request) {
+// UploadCSVGet will return the processed html page to the caller for posting the upload file
+func UploadCSVGet(w http.ResponseWriter, r *http.Request) {
 	http.Error(w, fmt.Sprintf("Feature %s is not yet implemented!", r.URL), http.StatusNotImplemented)
 	return // redundant, but good coding practice
 }
 
-func uploadCSVPost(pCsvReader *csv.Reader, pStatus bulkUploadStatus) string {
+// UploadCSV will process the given file,
+// generally invoked from the end point handler,
+// but can be called directly if processing a file internally
+//
+func UploadCSV(pCsvReader *csv.Reader, pStatus bulkUploadStatus) string {
 	var lasRow []string
 	var lErr error
 	var lsErrStr string
