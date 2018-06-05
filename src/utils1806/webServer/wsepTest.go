@@ -3,37 +3,15 @@ package webServer
 import (
 	"log"
 	"net/http"
-	"utils1806/ReqDebug"
 )
 
 func addTestEndPoints(pSrvMux *http.ServeMux) {
 
-	// Add function "/"
-	pSrvMux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		log.Printf("Endpoint %s called with Method %s, Full URI = %s", r.URL.Path, r.Method, r.RequestURI)
-		w.Write([]byte("Default endpoint called."))
-	})
-
-	// Add function ReqDebug
-	pSrvMux.HandleFunc("/reqdebug", func(w http.ResponseWriter, r *http.Request) {
-		log.Printf("Endpoint %s called with Method %s, Full URI = %s", r.URL.Path, r.Method, r.RequestURI)
-
-		w.Header().Add("Content-Type", "application/json")
-		w.Header().Add("Content-Disposition", "inline")
-		w.Write([]byte(ReqDebug.DumpRequestData(r)))
-		w.WriteHeader(http.StatusOK)
-
-		// For now, dont enforce method
-
-		/*
-			switch r.Method {
-			case "GET":
-			case "POST":
-			default:
-				// setMethodError(w, r)
-			}
-		*/
-	})
+	// // This will now be handled by file server
+	// pSrvMux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+	// 	log.Printf("Endpoint %s called with Method %s, Full URI = %s", r.URL.Path, r.Method, r.RequestURI)
+	// 	w.Write([]byte("Default endpoint called."))
+	// })
 
 	// Add function "A"
 	pSrvMux.HandleFunc("/testa", func(w http.ResponseWriter, r *http.Request) {

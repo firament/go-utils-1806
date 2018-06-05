@@ -59,10 +59,13 @@ https://medium.com/@matryer/the-http-handler-wrapper-technique-in-golang-updated
 
 */
 
+var httpContentBasePath string = "src/appWeb/pages"
+
 func getAllEndpoints() *http.ServeMux {
 	var lSrvMux *http.ServeMux
 	lSrvMux = http.NewServeMux()
 
+	addEndPoints(lSrvMux)
 	addTestEndPoints(lSrvMux)
 	addFileUploadEndPoints(lSrvMux)
 
@@ -84,7 +87,7 @@ func setMethodError(w http.ResponseWriter, r *http.Request) (rErrData string) {
 	w.WriteHeader(http.StatusMethodNotAllowed)
 
 	var lsErrStr string
-	lsErrStr = fmt.Sprintf("setMethodError: Called by Endpoint '%s' with Method '%s'", r.URL.Path, r.Method)
+	lsErrStr = fmt.Sprintf("setMethodError: Unsupported Method '%s' on Endpoint '%s'.", r.Method, r.URL.Path)
 	w.Write([]byte(lsErrStr))
 
 	// return the JSON formatted error dump, in case the caller want to consume it

@@ -11,6 +11,10 @@ import (
 )
 
 type requestData struct {
+	ClientIP     string
+	ClientHost   string
+	ConnProtocol string
+	ConnScheme   string
 	Headers      []entryLine
 	Cookies      []entryLine
 	QueryString  []entryLine
@@ -26,9 +30,15 @@ func DumpRequestData(r *http.Request) (rsOutput string) {
 
 	log.Println("DumpRequestData - Begin")
 	var lOutput requestData
+
+	lOutput.ClientIP = r.RemoteAddr
+	lOutput.ClientHost = r.Host
+	lOutput.ConnProtocol = r.Proto
+	// lOutput.ConnScheme = bytes.NewBuffer(r.TLS.TLSUnique).String()
+
 	lOutput.Headers = getHeaders(r.Header)
 	lOutput.Cookies = getCookies(r.Cookies())
-	lOutput.QueryString = getQueryParms(strings.Split(r.URL.RawQuery, "&"))
+	lOutput.QueryString = getQueryParms(r.URL.RawQuery)
 
 	// Get a copy, we dont want to consume the body
 	reqCopy, err := httputil.DumpRequest(r, true)
@@ -85,17 +95,27 @@ func getCookies(pCookies []*http.Cookie) (rCookies []entryLine) {
 	return
 }
 
-func getQueryParms(pQryParms []string) (rQueryParms []entryLine) {
+func getQueryParms(pQryString string) (rQueryParms []entryLine) {
+	var lasQryParms []string
 	var lsKV string
 	var lasKVPair []string
 	var liIndex int
 
-	log.Printf("Processing %d Query Parms", len(pQryParms))
-	rQueryParms = make([]entryLine, len(pQryParms))
+	if len(strings.Trim(pQryString, " ")) == 0 {
+		log.Printf("No Query Parms to process.")
+		return
+	}
+	lasQryParms = strings.Split(pQryString, "&")
+
+	log.Printf("Processing %d Query Parms", len(lasQryParms))
+	rQueryParms = make([]entryLine, len(lasQryParms))
 	var lEntry entryLine
 
-	for liIndex, lsKV = range pQryParms {
+	for liIndex, lsKV = range lasQryParms {
 		lasKVPair = strings.Split(lsKV, "=")
+		if len(lasKVPair) < 1 {
+			lasKVPair[1] = ""
+		}
 		lEntry = entryLine{
 			Name:  lasKVPair[0],
 			Value: lasKVPair[1],
