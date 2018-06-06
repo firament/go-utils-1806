@@ -25,13 +25,37 @@ type entryLine struct {
 	Value string
 }
 
-// DumpRequestData will return in readable format
+// DumpRequestOutData is an experimental feature to inspect the Outbound Request snapshot
+func DumpRequestOutData(pReqOut *http.Request) (rsOutput string) {
+	labRespDump, err := httputil.DumpRequestOut(pReqOut, false)
+	if err != nil {
+		fmt.Printf("DumpRequestOutData: Dump error is %+v \n", err)
+	}
+	lsRespString := bytes.NewBuffer(labRespDump).String()
+	rsOutput = utils1806.GetAsJson(strings.Split(lsRespString, "\r\n"))
+	// fmt.Println("Response as String = ", lsRespString)
+	return
+}
+
+// DumpResponseData is an experimental feature to inspect the Response snapshot
+func DumpResponseData(pResp *http.Response) (rsOutput string) {
+	labRespDump, err := httputil.DumpResponse(pResp, true)
+	if err != nil {
+		fmt.Printf("DumpResponseData: Dump error is %+v \n", err)
+	}
+	lsRespString := bytes.NewBuffer(labRespDump).String()
+	rsOutput = utils1806.GetAsJson(strings.Split(lsRespString, "\r\n"))
+	// fmt.Println("Response as String = ", lsRespString)
+	return
+}
+
+// DumpRequestData will return Request contents in readable format
 func DumpRequestData(r *http.Request) (rsOutput string) {
 
 	log.Println("DumpRequestData - Begin")
 	var lOutput requestData
 
-	lOutput.ClientIP = r.RemoteAddr
+	lOutput.ClientIP = r.RemoteAddr + " | " + r.Header.Get("X-Forwarded-For")
 	lOutput.ClientHost = r.Host
 	lOutput.ConnProtocol = r.Proto
 	// lOutput.ConnScheme = bytes.NewBuffer(r.TLS.TLSUnique).String()
@@ -77,19 +101,22 @@ func getHeaders(pHeaders http.Header) (rHeaders []entryLine) {
 func getCookies(pCookies []*http.Cookie) (rCookies []entryLine) {
 	var lCookie *http.Cookie
 	var liIndex int
+	var lsCleanOP string
 
 	log.Printf("Processing %d Cookies", len(pCookies))
 	rCookies = make([]entryLine, len(pCookies))
 	var lEntry entryLine
 
 	for liIndex, lCookie = range pCookies {
+		lsCleanOP = strings.Replace(utils1806.GetAsJson(lCookie), "\n", "", -1)
+		lsCleanOP = strings.Replace(lsCleanOP, "\"", "'", -1)
 		lEntry = entryLine{
 			Name:  lCookie.Name,
-			Value: lCookie.Value,
+			Value: lsCleanOP,
 		}
 		rCookies[liIndex] = lEntry
 
-		fmt.Printf("Entry %d: Key = %s, Val = %s\n", liIndex, lEntry.Name, lEntry.Value)
+		// fmt.Printf("Entry %d: Key = %s, Val = %s\n", liIndex, lEntry.Name, lEntry.Value)
 		fmt.Printf("Raw Value is %+v \n", lCookie)
 	}
 	return

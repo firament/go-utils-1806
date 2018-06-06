@@ -17,6 +17,31 @@ func addEndPoints(pSrvMux *http.ServeMux) {
 
 	pSrvMux.Handle("/", http.FileServer(http.Dir(httpContentBasePath)))
 
+	// Add function teapot, a simple test to check life
+	pSrvMux.HandleFunc("/teapot", func(w http.ResponseWriter, r *http.Request) {
+		log.Printf("Endpoint %s called with Method %s, Full URI = %s", r.URL.Path, r.Method, r.RequestURI)
+		var lsText string
+		lsText = "I am a little teapot... time now is " + time.Now().String()
+		w.Write([]byte(lsText))
+	})
+
+	// Add function doPanic
+	pSrvMux.HandleFunc("/dopanic", func(w http.ResponseWriter, r *http.Request) {
+		log.Printf("Endpoint %s called with Method %s, Full URI = %s", r.URL.Path, r.Method, r.RequestURI)
+		// Create an unhandled panic, regardless of method
+		// log.Panicln("Raising a PANIC at", time.Now().String())	// causes non-fatal panic
+		// panic("Raising a PANIC at" + time.Now().String())		// causes non-fatal panic
+		println("Survived Panic")
+		r.Response.Header.Get("utils1806-redir-to") // causes fatal panic? not from here
+	})
+
+	// Add function doRedir
+	pSrvMux.HandleFunc("/doredir", func(w http.ResponseWriter, r *http.Request) {
+		log.Printf("Endpoint %s called with Method %s, Full URI = %s", r.URL.Path, r.Method, r.RequestURI)
+		http.Redirect(w, r, "reqdebug", http.StatusTemporaryRedirect)
+		fmt.Println("Inspect response in proxy atfet this")
+	})
+
 	// Add function ReqDebug
 	pSrvMux.HandleFunc("/reqdebug", func(w http.ResponseWriter, r *http.Request) {
 		log.Printf("Endpoint %s called with Method %s, Full URI = %s", r.URL.Path, r.Method, r.RequestURI)
@@ -38,9 +63,18 @@ func addEndPoints(pSrvMux *http.ServeMux) {
 		case http.MethodGet:
 			http.SetCookie(w, &http.Cookie{
 				Name:    fmt.Sprintf("test-cki-%d", time.Now().Second()),
-				Path:    "/",
+				Path:    msCookiePath,
+				Domain:  msCookieDomain,
 				Value:   "Created as test cookie at " + time.Now().String(),
-				Expires: time.Now().Add(24 * time.Hour),
+				Expires: time.Now().Add(2 * time.Minute),
+			})
+			// Repeat cookie
+			http.SetCookie(w, &http.Cookie{
+				Name:    "test-repeat",
+				Path:    msCookiePath,
+				Domain:  msCookieDomain,
+				Value:   "Created as test cookie at " + time.Now().String(),
+				Expires: time.Now().Add(2 * time.Minute),
 			})
 			w.Header().Add("Content-Type", "text/plain")
 			w.Header().Add("Content-Disposition", "inline")
