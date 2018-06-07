@@ -25,12 +25,34 @@ func addEndPoints(pSrvMux *http.ServeMux) {
 		w.Write([]byte(lsText))
 	})
 
+	// Add function SwitchTest, to test fall through
+	pSrvMux.HandleFunc("/switchtest", func(w http.ResponseWriter, r *http.Request) {
+		log.Printf("Endpoint %s called with Method %s, Full URI = %s", r.URL.Path, r.Method, r.RequestURI)
+		r.ParseForm()
+		var lsTag string = r.Form.Get("tagval")
+		switch lsTag {
+		case "a":
+			fallthrough
+		case "b":
+			fallthrough
+		case "c":
+			fmt.Println("cases A-C")
+		case "d":
+			fallthrough
+		case "e":
+			fmt.Println("case D, E")
+		default:
+			fmt.Println("other than A-E")
+		}
+
+	})
+
 	// Add function doPanic
 	pSrvMux.HandleFunc("/dopanic", func(w http.ResponseWriter, r *http.Request) {
 		log.Printf("Endpoint %s called with Method %s, Full URI = %s", r.URL.Path, r.Method, r.RequestURI)
 		// Create an unhandled panic, regardless of method
 		// log.Panicln("Raising a PANIC at", time.Now().String())	// causes non-fatal panic
-		// panic("Raising a PANIC at" + time.Now().String())		// causes non-fatal panic
+		panic("Raising a PANIC at" + time.Now().String()) // causes non-fatal panic
 		println("Survived Panic")
 		r.Response.Header.Get("utils1806-redir-to") // causes fatal panic? not from here
 	})

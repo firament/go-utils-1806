@@ -6,9 +6,12 @@ import (
 	"net/http"
 	"net/http/httputil"
 	"net/url"
+	"runtime/debug"
 	"strings"
 	"time"
+	"utils1806/common"
 
+	"github.com/Jeffail/gabs"
 	"github.com/pborman/uuid"
 )
 
@@ -22,10 +25,12 @@ type custTransport struct{}
 
 func (t *custTransport) RoundTrip(request *http.Request) (*http.Response, error) {
 	log.Println("custTransport.RoundTrip: Enter", time.Now().String())
-
 	// Can request be modified?
 	response, err := http.DefaultTransport.RoundTrip(request)
 	if err != nil {
+		// TODO: Write appropiate error message
+		common.WriteErrorResponse(debug.Stack())
+		request.Header.Add("RoundTrip", "Error GUUID")
 		return nil, err
 	}
 	// Can response be modified?
@@ -75,19 +80,16 @@ func proxyHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Test entries to inspect propogation
-	r.Header.Set("X-proxy-ReqVal", "Request value set by proxy")
-	w.Header().Set("X-proxy-HeaderVal", "Header value set by proxy")
+	// Log Sample - begin
 
-	// Configure Proxy
-	revProxy := httputil.NewSingleHostReverseProxy(u)
-	revProxy.Transport = &custTransport{}
-	revProxy.Director = proxyRequestMgr
-	revProxy.ModifyResponse = proxyResponseUpdate
-
+	// SESSION ID - For sessions before login happens
 	// Reuse Value if cookie already exists
-	var lsSessID string = uuid.NewUUID().String()
-	lSessCki, lErrCki := r.Cookie("utils1806-session-id")
+	var lsSessID string = uuid.NewUUID().String() // Use LongCodePT()
+	var lSessCki, lLoginCki *http.Cookie
+	var lErrCki error
+
+	// Get Http Session cookie
+	lSessCki, lErrCki = r.Cookie("utils1806-session-id")
 	if lErrCki == nil {
 		fmt.Println("Existing Session ID = ", lsSessID)
 		lsSessID = lSessCki.Value
@@ -101,9 +103,67 @@ func proxyHandler(w http.ResponseWriter, r *http.Request) {
 		Path:     msCookiePath,
 		Domain:   msCookieDomain,
 		HttpOnly: false,
-		Expires:  time.Now().Add(5 * time.Minute),
+		Expires:  time.Now().Add(2048 * time.Hour),
 		Secure:   false,
 	})
+
+	// TODO: Use value from config
+	// Expires:  time.Now().Add(2048 * time.Hour),
+
+	var lsPath = strings.ToLower(r.URL.Path)
+	switch {
+	case strings.HasSuffix(lsPath, "css"):
+	case strings.HasSuffix(lsPath, "js"):
+	case strings.HasSuffix(lsPath, "jpeg"):
+	case strings.HasSuffix(lsPath, "jpg"):
+	case strings.HasSuffix(lsPath, "png"):
+	case strings.HasSuffix(lsPath, "ico"):
+		// Do not log for these cases
+	default:
+		fmt.Println("LOG ENTRY WILL BE WRITTEN.")
+		// Write the log here, and only here
+
+		var logRoot string = "LOG-OBJECT"
+		var logEntryJSON = gabs.New()
+		logEntryJSON.Set(lsSessID, logRoot, "SessionID")
+		logEntryJSON.Set(r.URL.EscapedPath(), logRoot, "RequsetPath")
+		logEntryJSON.Set(r.Header.Get("X-Forwarded-For"), logRoot, "ForwardedFor")
+		logEntryJSON.Set(r.Header.Get("User-Agent"), logRoot, "UserAgent")
+		logEntryJSON.Set(r.Header.Get("Referer"), logRoot, "Referer")
+
+		// Get App Session cookie
+		lLoginCki, lErrCki = r.Cookie("AppAuthCookie")
+		if lErrCki == nil {
+			fmt.Println(lLoginCki.Value)
+			// TODO Write values from cookie
+			logEntryJSON.Set("", logRoot, "UserName")
+			logEntryJSON.Set("0", logRoot, "UserID")
+			logEntryJSON.Set("0", logRoot, "OrgID")
+			logEntryJSON.Set("0", logRoot, "RoleID")
+		} else {
+			// Keep blank entries, to ensure fields availaible for processing
+			logEntryJSON.Set("", logRoot, "User", "UserName")
+			logEntryJSON.Set("0", logRoot, "User", "UserID")
+			logEntryJSON.Set("0", logRoot, "User", "OrgID")
+			logEntryJSON.Set("0", logRoot, "User", "RoleID")
+		}
+
+		log.Println(logEntryJSON.StringIndent("", "  ")) // For debugging
+		// log.Println(logEntryJSON.String()) // for PROD
+
+	} // switch - end
+
+	// log sample - end
+
+	// Test entries to inspect propogation
+	r.Header.Set("X-proxy-ReqVal", "Request value set by proxy")
+	w.Header().Set("X-proxy-HeaderVal", "Header value set by proxy")
+
+	// Configure Proxy
+	revProxy := httputil.NewSingleHostReverseProxy(u)
+	revProxy.Transport = &custTransport{}
+	revProxy.Director = proxyRequestMgr
+	revProxy.ModifyResponse = proxyResponseUpdate
 
 	/* Is this required? or will original context have the object?
 	// Get Auth Context
@@ -112,6 +172,11 @@ func proxyHandler(w http.ResponseWriter, r *http.Request) {
 	*/
 
 	revProxy.ServeHTTP(w, r) // Do the actual reverse proxying...
+
+	lsRTErr := r.Header.Get("RoundTrip")
+	if lsRTErr != "" {
+		log.Println("Round Trip Error Code = ", lsRTErr)
+	}
 
 	// Inspect status - for redirects
 	var lsRedirTag string
@@ -181,7 +246,7 @@ func proxyRequestMgr(req *http.Request) {
 // // and-or adds or modifies cookies
 // to response before returning to client
 func proxyResponseUpdate(w *http.Response) error {
-	log.Println("webServer.proxyResponseUpdate - Enter", time.Now().String())
+	log.Println("webServer.proxyResponseUpdate: Enter", time.Now().String())
 
 	// Capture Redirect condition
 	var lsReloc string = w.Header.Get("Location")
@@ -193,7 +258,9 @@ func proxyResponseUpdate(w *http.Response) error {
 		fmt.Println("NO RELOCATION INFO FOUND.")
 	}
 
+	// w.StatusCode() // This could be used to capture redirects
+
 	w.Header.Add("X-setResponseHeader", "Header added in webServer.setResponseHeader")
-	log.Println("webServer.proxyResponseUpdate - Exit", time.Now().String())
+	log.Println("webServer.proxyResponseUpdate: Exit", time.Now().String())
 	return nil
 }

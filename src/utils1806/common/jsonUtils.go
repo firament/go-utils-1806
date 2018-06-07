@@ -1,4 +1,8 @@
-package utils1806
+package common
+
+/*
+	MOve to 'package common'
+*/
 
 import (
 	"bytes"

@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"net/http/httputil"
 	"strings"
-	"utils1806"
+	"utils1806/common"
 )
 
 type requestData struct {
@@ -32,7 +32,7 @@ func DumpRequestOutData(pReqOut *http.Request) (rsOutput string) {
 		fmt.Printf("DumpRequestOutData: Dump error is %+v \n", err)
 	}
 	lsRespString := bytes.NewBuffer(labRespDump).String()
-	rsOutput = utils1806.GetAsJson(strings.Split(lsRespString, "\r\n"))
+	rsOutput = common.GetAsJson(strings.Split(lsRespString, "\r\n"))
 	// fmt.Println("Response as String = ", lsRespString)
 	return
 }
@@ -44,7 +44,7 @@ func DumpResponseData(pResp *http.Response) (rsOutput string) {
 		fmt.Printf("DumpResponseData: Dump error is %+v \n", err)
 	}
 	lsRespString := bytes.NewBuffer(labRespDump).String()
-	rsOutput = utils1806.GetAsJson(strings.Split(lsRespString, "\r\n"))
+	rsOutput = common.GetAsJson(strings.Split(lsRespString, "\r\n"))
 	// fmt.Println("Response as String = ", lsRespString)
 	return
 }
@@ -71,7 +71,7 @@ func DumpRequestData(r *http.Request) (rsOutput string) {
 	}
 	lOutput.RawDumpLines = strings.Split(bytes.NewBuffer(reqCopy).String(), "\r\n")
 
-	rsOutput = utils1806.GetAsJson(lOutput)
+	rsOutput = common.GetAsJson(lOutput)
 	// rsOutput += fmt.Sprintf("\nBody Dump is \n%+v", bytes.NewBuffer(reqCopy).String())
 	return
 }
@@ -108,7 +108,7 @@ func getCookies(pCookies []*http.Cookie) (rCookies []entryLine) {
 	var lEntry entryLine
 
 	for liIndex, lCookie = range pCookies {
-		lsCleanOP = strings.Replace(utils1806.GetAsJson(lCookie), "\n", "", -1)
+		lsCleanOP = strings.Replace(common.GetAsJson(lCookie), "\n", "", -1)
 		lsCleanOP = strings.Replace(lsCleanOP, "\"", "'", -1)
 		lEntry = entryLine{
 			Name:  lCookie.Name,
