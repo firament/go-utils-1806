@@ -21,6 +21,8 @@ var msCookiePath string = "/"
 type custTransport struct{}
 
 func (t *custTransport) RoundTrip(request *http.Request) (*http.Response, error) {
+	log.Println("custTransport.RoundTrip: Enter", time.Now().String())
+
 	// Can request be modified?
 	response, err := http.DefaultTransport.RoundTrip(request)
 	if err != nil {
@@ -28,6 +30,8 @@ func (t *custTransport) RoundTrip(request *http.Request) (*http.Response, error)
 	}
 	// Can response be modified?
 	response.Header.Add("X-RoundTrip-A", "Header added in custTransport.RoundTrip")
+
+	log.Println("custTransport.RoundTrip: Exit", time.Now().String())
 	return response, err
 }
 
@@ -53,7 +57,7 @@ func StartProxy(piPort int, piWebPort int) {
 // and will manage all requests that come in
 func proxyHandler(w http.ResponseWriter, r *http.Request) {
 	log.Printf("webServer.ProxyHandler: Path = %s ; urlstring = %s", r.URL.Path, fmt.Sprintf("http://localhost:%d", miWebPort))
-	fmt.Println("webServer.ProxyHandler: ", time.Now().String())
+	fmt.Println("webServer.ProxyHandler: Enter", time.Now().String())
 	r.Header.Add("X-proxyHandler-Req", "Header in Request Add in webServer.proxyHandler")
 	w.Header().Add("X-proxyHandler-Resp-Add", "Header in Response Add in webServer.proxyHandler")
 	w.Header().Set("X-proxyHandler-Resp-Set", "Header in Response set in webServer.proxyHandler")
@@ -135,12 +139,13 @@ func proxyHandler(w http.ResponseWriter, r *http.Request) {
 		Expires:  time.Now().Add(5 * time.Minute),
 		Secure:   false,
 	})
-	fmt.Println("hook for debugging")
+	// fmt.Println("hook for debugging")
+	log.Println("webServer.ProxyHandler: Exit", time.Now().String())
 }
 
 // proxyRequestMgr will modify request object before forwarding to proxied server
 func proxyRequestMgr(req *http.Request) {
-	log.Println("webServer.proxyRequestMgr: ", time.Now().String())
+	log.Println("webServer.proxyRequestMgr: Enter", time.Now().String())
 	req.Header.Add("X-proxyRequestMgr", "Header added in webServer.proxyRequestMgr")
 	/*
 	   PLAN:
@@ -169,13 +174,14 @@ func proxyRequestMgr(req *http.Request) {
 		fmt.Printf("Value of TagX Cookie is %s", lTagCki.Value)
 	}
 
+	log.Println("webServer.proxyRequestMgr: Exit", time.Now().String())
 }
 
 // proxyResponseUpdate adds or modifies headers
 // // and-or adds or modifies cookies
 // to response before returning to client
 func proxyResponseUpdate(w *http.Response) error {
-	log.Println("webServer.proxyResponseUpdate", time.Now().String())
+	log.Println("webServer.proxyResponseUpdate - Enter", time.Now().String())
 
 	// Capture Redirect condition
 	var lsReloc string = w.Header.Get("Location")
@@ -188,5 +194,6 @@ func proxyResponseUpdate(w *http.Response) error {
 	}
 
 	w.Header.Add("X-setResponseHeader", "Header added in webServer.setResponseHeader")
+	log.Println("webServer.proxyResponseUpdate - Exit", time.Now().String())
 	return nil
 }
