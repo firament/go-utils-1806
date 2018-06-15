@@ -32,7 +32,7 @@ func DumpRequestOutData(pReqOut *http.Request) (rsOutput string) {
 		fmt.Printf("DumpRequestOutData: Dump error is %+v \n", err)
 	}
 	lsRespString := bytes.NewBuffer(labRespDump).String()
-	rsOutput = common.GetAsJson(strings.Split(lsRespString, "\r\n"))
+	rsOutput = common.GetAsJsonF(strings.Split(lsRespString, "\r\n"))
 	// fmt.Println("Response as String = ", lsRespString)
 	return
 }
@@ -44,7 +44,7 @@ func DumpResponseData(pResp *http.Response) (rsOutput string) {
 		fmt.Printf("DumpResponseData: Dump error is %+v \n", err)
 	}
 	lsRespString := bytes.NewBuffer(labRespDump).String()
-	rsOutput = common.GetAsJson(strings.Split(lsRespString, "\r\n"))
+	rsOutput = common.GetAsJsonF(strings.Split(lsRespString, "\r\n"))
 	// fmt.Println("Response as String = ", lsRespString)
 	return
 }
@@ -71,7 +71,7 @@ func DumpRequestData(r *http.Request) (rsOutput string) {
 	}
 	lOutput.RawDumpLines = strings.Split(bytes.NewBuffer(reqCopy).String(), "\r\n")
 
-	rsOutput = common.GetAsJson(lOutput)
+	rsOutput = common.GetAsJsonF(lOutput)
 	// rsOutput += fmt.Sprintf("\nBody Dump is \n%+v", bytes.NewBuffer(reqCopy).String())
 	return
 }

@@ -64,8 +64,8 @@ func StartProxy(piPort int, piWebPort int) {
 func proxyHandler(w http.ResponseWriter, r *http.Request) {
 	var lsCurrFn string = "webServer.ProxyHandler: "
 
-	log.Printf("\n\n%sNew Requesuest \nEnter @ %s", lsCurrFn, time.Now().String())
-	fmt.Printf("%s Path = %s ; urlstring = %s/n", lsCurrFn, r.URL.Path, fmt.Sprintf("http://localhost:%d", miWebPort))
+	log.Printf("\n\n%sNew Request '%s'\nEnter @ %s\n", lsCurrFn, r.URL.Path, time.Now().String())
+	fmt.Printf("%s Host = %s, Path = %s ; urlstring = %s\n", lsCurrFn, r.Host, r.URL.Path, fmt.Sprintf("http://localhost:%d", miWebPort))
 
 	// REQUEST - Add header entry, and test in downstream for propogation
 	r.Header.Add("X-proxyHandler-Req", "Header in Request Add in webServer.proxyHandler")
@@ -74,7 +74,7 @@ func proxyHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("X-proxyHandler-Resp-Set", "Header in Response set in webServer.proxyHandler")
 
 	// TEMP Inspection writes
-	fmt.Println(lsCurrFn, "r.Host =", r.Host)
+	// fmt.Println(lsCurrFn, "r.Host =", r.Host)
 	// fmt.Println("r.Response =", r.Response)
 	// fmt.Println (" =", r.)
 	// fmt.Println (" =", r.)
@@ -174,8 +174,8 @@ func proxyHandler(w http.ResponseWriter, r *http.Request) {
 			logEntryJSON.Set("0", logRoot, "User", "RoleID")
 		}
 
-		// log.Println(logEntryJSON.StringIndent("", "  ")) // For debugging, formatted
-		log.Println(logEntryJSON.String()) // for PROD
+		log.Println(logEntryJSON.StringIndent("", "  ")) // For debugging, formatted
+		// log.Println(logEntryJSON.String()) // for PROD
 
 	}
 
@@ -256,6 +256,8 @@ func proxyHandler(w http.ResponseWriter, r *http.Request) {
 		Secure:   false,
 	})
 
+	fmt.Printf("%s Headers-Req are: %s\n", lsCurrFn, getHeaders(r.Header))
+	fmt.Printf("%s Headers-Resp are: %s\n", lsCurrFn, getHeaders(w.Header()))
 	log.Println(lsCurrFn, "Exit", time.Now().String())
 }
 
@@ -297,6 +299,8 @@ func proxyRequestMgr(req *http.Request) {
 		fmt.Printf("%s Value of TagX Cookie is %s\n", lsCurrFn, lTagCki.Value)
 	}
 
+	fmt.Printf("%s Headers-Req are: %s\n", lsCurrFn, getHeaders(req.Header))
+	// fmt.Printf("%s Headers-Resp are: %s\n", lsCurrFn, getHeaders(req.Response.Header)) // PANICs
 	log.Println(lsCurrFn, "Exit", time.Now().String())
 }
 
@@ -353,7 +357,77 @@ func proxyResponseUpdate(w *http.Response) error {
 	fmt.Printf("%s liGenRetCode == %d, lsAction == %s\n", lsCurrFn, liGenRetCode, lsAction)
 
 	w.Header.Set("X-PRU-Action", lsAction)
+
+	fmt.Printf("%s Headers-Req are: %s\n", lsCurrFn, getHeaders(w.Request.Header))
+	fmt.Printf("%s Headers-Resp are: %s\n", lsCurrFn, getHeaders(w.Header))
 	log.Println(lsCurrFn, "Exit", time.Now().String())
 
 	return nil
 }
+
+type entryLine struct {
+	Name  string
+	Value string
+}
+
+func getHeaders(pHeaders http.Header) (rsOutput string) {
+	var lsKey string
+	var lasVals []string
+	var liIndex int
+	var lHeaders []entryLine
+
+	fmt.Printf("getHeaders: Processing %d Headers\n", len(pHeaders))
+	lHeaders = make([]entryLine, len(pHeaders))
+	var lEntry entryLine
+
+	for lsKey, lasVals = range pHeaders {
+		lEntry = entryLine{
+			Name:  lsKey,
+			Value: strings.Join(lasVals, ", "),
+		}
+		lHeaders[liIndex] = lEntry
+		liIndex++
+
+		// fmt.Printf("Entry %d: Key = %s, Val = %s", liIndex, lEntry.Name, lEntry.Value)
+	}
+
+	// fmt.Printf("%+v", lHeaders)
+	rsOutput = common.GetAsJsonF(lHeaders)
+	return
+}
+
+/*
+func GetHeadersX(pHeaders http.Header) (rsOutput string) {
+	var lsKey string
+	var lasVals []string
+	var liIndex int
+
+	var logRoot string = "httpHeaders"
+	var lHeadersJSON = gabs.New()
+
+	var lEntryJ *gabs.Container
+
+	logEntryJSON.Set(lsSessID, logRoot, "SessionID")
+	logEntryJSON.Set(r.URL.EscapedPath(), logRoot, "RequsetPath")
+
+	log.Printf("Processing %d Headers", len(pHeaders))
+	rHeaders = make([]entryLine, len(pHeaders))
+	var lEntry entryLine
+
+	for lsKey, lasVals = range pHeaders {
+		lEntryJ = gabs.New()
+		lEntryJ.SetP(lsKey, "Name")
+		lEntryJ.SetP(strings.Join(lasVals, ", "), "Value")
+
+		lEntry = entryLine{
+			Name:  lsKey,
+			Value: strings.Join(lasVals, ", "),
+		}
+		rHeaders[liIndex] = lEntry
+		liIndex++
+
+		// fmt.Printf("Entry %d: Key = %s, Val = %s", liIndex, lEntry.Name, lEntry.Value)
+	}
+	return
+}
+*/

@@ -9,22 +9,23 @@ import (
 )
 
 func addEndPoints(pSrvMux *http.ServeMux) {
+	var lsCurrFn string = "webServer.addEndPoints: "
 
 	/*
 		-- STATIC files will now be served directly by the proxy. --
 		// pSrvMux.Handle("/", http.FileServer(http.Dir(httpContentBasePath)))
-		pSrvMux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-			log.Printf("Endpoint %s called with Method %s, Full URI = %s", r.URL.Path, r.Method, r.RequestURI)
-			var lsFile string
-			lsFile = httpContentBasePath + r.URL.Path[1:]
-			log.Printf("File: %s", lsFile)
-			http.ServeFile(w, r, lsFile)
-		})
 	*/
+	pSrvMux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		log.Printf("%s -- ERROR -- Endpoint %s called with Method %s, Full URI = %s\n", lsCurrFn, r.URL.Path, r.Method, r.RequestURI)
+		var lsFile string
+		lsFile = httpContentBasePath + r.URL.Path[1:]
+		log.Printf("File: %s", lsFile)
+		http.ServeFile(w, r, lsFile)
+	})
 
 	// Add function teapot, a simple test to check life
 	pSrvMux.HandleFunc("/teapot", func(w http.ResponseWriter, r *http.Request) {
-		log.Printf("Endpoint %s called with Method %s, Full URI = %s", r.URL.Path, r.Method, r.RequestURI)
+		fmt.Printf("%s Endpoint %s called with Method %s, Full URI = %s\n", lsCurrFn, r.URL.Path, r.Method, r.RequestURI)
 		var lsText string
 		lsText = "I am a little teapot... time now is " + time.Now().String()
 		w.Write([]byte(lsText))
@@ -32,7 +33,7 @@ func addEndPoints(pSrvMux *http.ServeMux) {
 
 	// Add function SwitchTest, to test fall through
 	pSrvMux.HandleFunc("/switchtest", func(w http.ResponseWriter, r *http.Request) {
-		log.Printf("Endpoint %s called with Method %s, Full URI = %s", r.URL.Path, r.Method, r.RequestURI)
+		fmt.Printf("%s Endpoint %s called with Method %s, Full URI = %s\n", lsCurrFn, r.URL.Path, r.Method, r.RequestURI)
 		r.ParseForm()
 		var lsTag string = r.Form.Get("tagval")
 		switch lsTag {
@@ -54,7 +55,7 @@ func addEndPoints(pSrvMux *http.ServeMux) {
 
 	// Add function doPanic
 	pSrvMux.HandleFunc("/dopanic", func(w http.ResponseWriter, r *http.Request) {
-		log.Printf("Endpoint %s called with Method %s, Full URI = %s", r.URL.Path, r.Method, r.RequestURI)
+		fmt.Printf("%s Endpoint %s called with Method %s, Full URI = %s\n", lsCurrFn, r.URL.Path, r.Method, r.RequestURI)
 		// Create an unhandled panic, regardless of method
 		// log.Panicln("Raising a PANIC at", time.Now().String())	// causes non-fatal panic
 		panic("Raising a PANIC at" + time.Now().String()) // causes non-fatal panic
@@ -64,14 +65,14 @@ func addEndPoints(pSrvMux *http.ServeMux) {
 
 	// Add function doRedir
 	pSrvMux.HandleFunc("/doredir", func(w http.ResponseWriter, r *http.Request) {
-		log.Printf("Endpoint %s called with Method %s, Full URI = %s", r.URL.Path, r.Method, r.RequestURI)
+		fmt.Printf("%s Endpoint %s called with Method %s, Full URI = %s\n", lsCurrFn, r.URL.Path, r.Method, r.RequestURI)
 		http.Redirect(w, r, "reqdebug", http.StatusTemporaryRedirect)
 		fmt.Println("Inspect response in proxy atfet this")
 	})
 
 	// Add function ReqDebug
 	pSrvMux.HandleFunc("/reqdebug", func(w http.ResponseWriter, r *http.Request) {
-		log.Printf("Endpoint %s called with Method %s, Full URI = %s", r.URL.Path, r.Method, r.RequestURI)
+		fmt.Printf("%s Endpoint %s called with Method %s, Full URI = %s\n", lsCurrFn, r.URL.Path, r.Method, r.RequestURI)
 		switch r.Method {
 		case http.MethodGet:
 			w.Header().Add("Content-Type", "application/json")
@@ -85,7 +86,7 @@ func addEndPoints(pSrvMux *http.ServeMux) {
 
 	// Add function cookieadd
 	pSrvMux.HandleFunc("/cookieadd", func(w http.ResponseWriter, r *http.Request) {
-		log.Printf("Endpoint %s called with Method %s, Full URI = %s", r.URL.Path, r.Method, r.RequestURI)
+		fmt.Printf("%s Endpoint %s called with Method %s, Full URI = %s\n", lsCurrFn, r.URL.Path, r.Method, r.RequestURI)
 		switch r.Method {
 		case http.MethodGet:
 			http.SetCookie(w, &http.Cookie{
