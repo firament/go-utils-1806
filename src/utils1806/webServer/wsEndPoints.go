@@ -4,18 +4,23 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"os"
 	"time"
 	"utils1806/ReqDebug"
 )
 
 func addEndPoints(pSrvMux *http.ServeMux) {
 
-	// webserver.Handle("/", http.FileServer(http.Dir(httpContentBasePath))
-	lsCWD, _ := os.Getwd()
-	log.Println(lsCWD)
-
-	pSrvMux.Handle("/", http.FileServer(http.Dir(httpContentBasePath)))
+	/*
+		-- STATIC files will now be served directly by the proxy. --
+		// pSrvMux.Handle("/", http.FileServer(http.Dir(httpContentBasePath)))
+		pSrvMux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+			log.Printf("Endpoint %s called with Method %s, Full URI = %s", r.URL.Path, r.Method, r.RequestURI)
+			var lsFile string
+			lsFile = httpContentBasePath + r.URL.Path[1:]
+			log.Printf("File: %s", lsFile)
+			http.ServeFile(w, r, lsFile)
+		})
+	*/
 
 	// Add function teapot, a simple test to check life
 	pSrvMux.HandleFunc("/teapot", func(w http.ResponseWriter, r *http.Request) {

@@ -3,7 +3,13 @@ package webServer
 import (
 	"fmt"
 	"net/http"
+	"os"
 )
+
+var lsCWD, _ = os.Getwd()
+
+// var httpContentBasePath string = "/01-Work/gits/go-utils-1806/src/appWeb/pages/"
+var httpContentBasePath string = "src/appWeb/pages"
 
 func StartWebServer(piPort int) {
 	if piPort < 8000 {
@@ -17,49 +23,48 @@ func StartWebServer(piPort int) {
 		// IdleTimeout:  650,
 	}
 	fmt.Println("Starting web server on port", fmt.Sprintf(":%d", piPort))
+	fmt.Println("Current Working Dir =", lsCWD)
 	go websrv.ListenAndServe()
 }
 
 /*
-w.Header().Add("Strict-Transport-Security", "max-age=63072000; includeSubDomains")
+	w.Header().Add("Strict-Transport-Security", "max-age=63072000; includeSubDomains")
 
-cfg := &tls.Config{
-  MinVersion: tls.VersionTLS12,
-}
 	cfg := &tls.Config{
-		MinVersion:               tls.VersionTLS12,
-		CurvePreferences:         []tls.CurveID{tls.CurveP521, tls.CurveP384, tls.CurveP256},
-		PreferServerCipherSuites: true,
-		CipherSuites: []uint16{
-			tls.TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,
-			tls.TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA,
-			tls.TLS_RSA_WITH_AES_256_GCM_SHA384,
-			tls.TLS_RSA_WITH_AES_256_CBC_SHA,
-		},
-}
+	MinVersion: tls.VersionTLS12,
+	}
+		cfg := &tls.Config{
+			MinVersion:               tls.VersionTLS12,
+			CurvePreferences:         []tls.CurveID{tls.CurveP521, tls.CurveP384, tls.CurveP256},
+			PreferServerCipherSuites: true,
+			CipherSuites: []uint16{
+				tls.TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,
+				tls.TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA,
+				tls.TLS_RSA_WITH_AES_256_GCM_SHA384,
+				tls.TLS_RSA_WITH_AES_256_CBC_SHA,
+			},
+	}
 
-go run `go env GOROOT`/src/crypto/tls/generate_cert.go --host localhost
+	go run `go env GOROOT`/src/crypto/tls/generate_cert.go --host localhost
 
 
-Generate private key (.key)
-# Key considerations for algorithm "RSA" ≥ 2048-bit
-openssl genrsa -out server.key 2048
-# Key considerations for algorithm "ECDSA" ≥ secp384r1
-# List ECDSA the supported curves (openssl ecparam -list_curves)
-openssl ecparam -genkey -name secp384r1 -out server.key
+	Generate private key (.key)
+	# Key considerations for algorithm "RSA" ≥ 2048-bit
+	openssl genrsa -out server.key 2048
+	# Key considerations for algorithm "ECDSA" ≥ secp384r1
+	# List ECDSA the supported curves (openssl ecparam -list_curves)
+	openssl ecparam -genkey -name secp384r1 -out server.key
 
-Generation of self-signed(x509) public key (PEM-encodings .pem|.crt) based on the private (.key)
-sopenssl req -new -x509 -sha256 -key server.key -out server.crt -days 3650
+	Generation of self-signed(x509) public key (PEM-encodings .pem|.crt) based on the private (.key)
+	sopenssl req -new -x509 -sha256 -key server.key -out server.crt -days 3650
 
-Path to CA certs on Ubuntu
-/etc/ssl/certs/ca-certificates.crt
+	Path to CA certs on Ubuntu
+	/etc/ssl/certs/ca-certificates.crt
 
-https://blog.charmes.net/post/reverse-proxy-go/
-https://medium.com/@matryer/the-http-handler-wrapper-technique-in-golang-updated-bc7fbcffa702
+	https://blog.charmes.net/post/reverse-proxy-go/
+	https://medium.com/@matryer/the-http-handler-wrapper-technique-in-golang-updated-bc7fbcffa702
 
 */
-
-var httpContentBasePath string = "src/appWeb/pages"
 
 func getAllEndpoints() *http.ServeMux {
 	var lSrvMux *http.ServeMux
